@@ -1,5 +1,6 @@
 const express = require("express");
 const { Pool } = require("pg");
+const cors = require("cors"); // Agrega la importación de cors
 
 const app = express();
 const port = 3000;
@@ -14,6 +15,7 @@ const pool = new Pool({
   ssl: true,
 });
 
+app.use(cors()); // Habilita CORS para todas las rutas
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

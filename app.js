@@ -37,7 +37,7 @@ app.post("/login", async (req, res) => {
 
     // Si las credenciales son correctas, devuelve un 200 OK
     if (result.rows.length > 0) {
-      res.status(200).json({ message: "Credenciales válidas" });
+      res.status(200).json(result.rows[0]);
     } else {
       res.status(500).json({ message: "Credenciales inválidas" });
     }

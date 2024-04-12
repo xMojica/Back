@@ -123,7 +123,7 @@ app.get("/cliente", async (req, res) => {
   }
 });
 
-// Actualizar usuario existente
+// Actualizar el usuario - recibe el objeto cliente como JSON y le hace update a la base de datos donde coincida el usuario
 app.put("/update", async (req, res) => {
   const {
     nit,
@@ -136,12 +136,12 @@ app.put("/update", async (req, res) => {
     email,
     contrasena,
     usuario,
-  } = req.body; // Datos actualizados del usuario
+  } = req.body;
 
   try {
     const client = await pool.connect();
 
-    // Verificar si el usuario existe
+    // busca el usuario para mirar si existe
     const existingUser = await client.query(
       "SELECT * FROM cliente WHERE usuario = $1",
       [usuario]
@@ -152,7 +152,6 @@ app.put("/update", async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // Actualizar el usuario
     const updatedUser = await client.query(
       "UPDATE cliente SET nit = $1, primernombre = $2, segundonombre = $3, primerapellido = $4, segundoapellido = $5, fechanacimiento = $6, telefono = $7, email = $8, contrasena = $9 WHERE usuario = $10 RETURNING *",
       [
@@ -179,5 +178,38 @@ app.put("/update", async (req, res) => {
     res
       .status(500)
       .json({ message: "Error al actualizar en la base de datos" });
+  }
+});
+
+// borrar un usuario de la base de datos
+app.delete("/delete", async (req, res) => {
+  const { usuario } = req.body;
+  try {
+    const client = await pool.connect();
+
+    // busca el usuario para mirar si existe
+    const existingUser = await client.query(
+      "SELECT * FROM cliente WHERE usuario = $1",
+      [usuario]
+    );
+
+    if (existingUser.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    } else {
+      const result = await client.query(
+        "DELETE FROM cliente WHERE usuario = $1",
+        [usuario]
+      );
+      console.log(usuario);
+      client.release();
+
+      res.status(200).json({
+        message: "Usuario eliminado exitosamente",
+      });
+    }
+  } catch (err) {
+    console.error("Error al consultar la base de datos", err);
+    res.status(500).json({ message: "Error al consultar la base de datos" });
   }
 });

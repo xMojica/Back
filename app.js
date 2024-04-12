@@ -45,6 +45,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Crear nuevvo usuario
 app.post("/register", async (req, res) => {
   const {
     nit,
@@ -96,5 +97,87 @@ app.post("/register", async (req, res) => {
   } catch (err) {
     console.error("Error al consultar o insertar en la base de datos", err);
     res.status(500).json({ message: "Error al insertar en la base de datos" });
+  }
+});
+
+// Buscar clientes
+app.get("/cliente", async (req, res) => {
+  const { usuario } = req.body;
+
+  try {
+    const client = await pool.connect();
+    const result = await client.query(
+      "SELECT * FROM cliente WHERE usuario = $1",
+      [usuario]
+    );
+    console.log(usuario);
+    client.release();
+    if (result.rows.length > 0) {
+      res.status(200).json(result.rows[0]);
+    } else {
+      res.status(404).json({ message: "Cliente no encontrado" });
+    }
+  } catch (err) {
+    console.error("Error al consultar la base de datos", err);
+    res.status(500).json({ message: "Error al consultar la base de datos" });
+  }
+});
+
+// Actualizar usuario existente
+app.put("/update", async (req, res) => {
+  const {
+    nit,
+    primernombre,
+    segundonombre,
+    primerapellido,
+    segundoapellido,
+    fechanacimiento,
+    telefono,
+    email,
+    contrasena,
+    usuario,
+  } = req.body; // Datos actualizados del usuario
+
+  try {
+    const client = await pool.connect();
+
+    // Verificar si el usuario existe
+    const existingUser = await client.query(
+      "SELECT * FROM cliente WHERE usuario = $1",
+      [usuario]
+    );
+
+    if (existingUser.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Actualizar el usuario
+    const updatedUser = await client.query(
+      "UPDATE cliente SET nit = $1, primernombre = $2, segundonombre = $3, primerapellido = $4, segundoapellido = $5, fechanacimiento = $6, telefono = $7, email = $8, contrasena = $9 WHERE usuario = $10 RETURNING *",
+      [
+        nit,
+        primernombre,
+        segundonombre,
+        primerapellido,
+        segundoapellido,
+        fechanacimiento,
+        telefono,
+        email,
+        contrasena,
+        usuario,
+      ]
+    );
+
+    client.release();
+    res.status(200).json({
+      message: "Usuario actualizado exitosamente",
+      usuarioActualizado: updatedUser.rows[0],
+    });
+  } catch (err) {
+    console.error("Error al actualizar en la base de datos", err);
+    res
+      .status(500)
+      .json({ message: "Error al actualizar en la base de datos" });
   }
 });
